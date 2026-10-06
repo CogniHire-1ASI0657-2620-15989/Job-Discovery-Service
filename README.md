@@ -1,6 +1,6 @@
 # Job-Search Service
 
-Microservicio de búsqueda de empleo y favoritos. Consume exclusivamente la API de Jooble Perú y confía en un API Gateway para autenticar al usuario.
+Microservicio horientado a la búsqueda de empleo y favoritos. Consume exclusivamente la API de Jooble Perú y confía en un API Gateway para autenticar al usuario.
 
 ## Configuración
 
