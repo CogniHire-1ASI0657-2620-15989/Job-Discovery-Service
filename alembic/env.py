@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, text
 
 from app.infrastructure.configuration.settings import get_settings
 from app.infrastructure.persistence.sqlalchemy.database import Base
@@ -17,15 +17,25 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    context.configure(url=config.get_main_option("sqlalchemy.url"), target_metadata=target_metadata, literal_binds=True)
+    context.configure(
+        url=config.get_main_option("sqlalchemy.url"),
+        target_metadata=target_metadata,
+        literal_binds=True,
+        version_table_schema=get_settings().database_schema,
+    )
     with context.begin_transaction():
         context.run_migrations()
 
 
 def run_migrations_online() -> None:
     connectable = engine_from_config(config.get_section(config.config_ini_section, {}), prefix="sqlalchemy.", poolclass=pool.NullPool)
+    schema = get_settings().database_schema
+    with connectable.begin() as connection:
+        connection.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema}"'))
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        connection.execute(text(f'SET search_path TO "{schema}"'))
+        connection.commit()
+        context.configure(connection=connection, target_metadata=target_metadata, version_table_schema=schema)
         with context.begin_transaction():
             context.run_migrations()
 
