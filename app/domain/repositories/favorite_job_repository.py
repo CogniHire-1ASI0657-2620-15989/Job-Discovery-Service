@@ -13,3 +13,6 @@ class FavoriteJobRepository(ABC):
 
     @abstractmethod
     async def list_for_user(self, user_id: int, offset: int, limit: int) -> tuple[list[JobOffer], int]: ...
+
+    @abstractmethod
+    async def find_job_for_user(self, user_id: int, job_offer_id: int) -> JobOffer | None: ...

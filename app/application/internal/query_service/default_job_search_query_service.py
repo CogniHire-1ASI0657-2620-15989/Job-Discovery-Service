@@ -18,3 +18,6 @@ class DefaultJobSearchQueryService(JobSearchQueryService):
         return await self._favorite_job_repository.list_for_user(
             query.user_id, (query.page - 1) * query.page_size, query.page_size
         )
+
+    async def handle_get_favorite_by_job_id(self, user_id: int, job_id: int) -> JobOffer | None:
+        return await self._favorite_job_repository.find_job_for_user(user_id, job_id)

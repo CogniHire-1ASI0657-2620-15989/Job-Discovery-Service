@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.infrastructure.configuration.settings import get_settings
+from app.interfaces.rest.controller.internal_controller import router as internal_router
 from app.interfaces.rest.controller.job_search_controller import router as jobs_router
 
 
@@ -22,6 +23,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(jobs_router)
+app.include_router(internal_router)
 
 
 @app.middleware("http")

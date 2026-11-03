@@ -60,3 +60,14 @@ class SQLAlchemyFavoriteJobRepository(FavoriteJobRepository):
             .limit(limit)
         )).all()
         return [SQLAlchemyJobOfferRepository._to_domain(model) for model in models], int(count or 0)
+
+    async def find_job_for_user(self, user_id: int, job_offer_id: int) -> JobOffer | None:
+        model = await self._session.scalar(
+            select(JobOfferModel)
+            .join(FavoriteJobModel, FavoriteJobModel.job_offer_id == JobOfferModel.id)
+            .where(
+                FavoriteJobModel.user_id == user_id,
+                FavoriteJobModel.job_offer_id == job_offer_id,
+            )
+        )
+        return SQLAlchemyJobOfferRepository._to_domain(model) if model else None
