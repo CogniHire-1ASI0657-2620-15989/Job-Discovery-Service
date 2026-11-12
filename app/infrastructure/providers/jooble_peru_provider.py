@@ -5,6 +5,7 @@ import httpx
 from app.application.ports.job_provider import JobProvider, ProviderUnavailable
 from app.domain.model.aggregates.job_offer import JobOffer
 from app.infrastructure.providers.circuit_breaker import CircuitBreaker
+from app.observability import outbound_headers
 
 
 class JooblePeruProvider(JobProvider):
@@ -30,11 +31,15 @@ class JooblePeruProvider(JobProvider):
         }
         try:
             if self._client is not None:
-                response = await self._client.post(f"{self._base_url}/{self._api_key}", json=payload)
+                response = await self._client.post(
+                    f"{self._base_url}/{self._api_key}", json=payload, headers=outbound_headers()
+                )
             else:
                 timeout = httpx.Timeout(0.7)
                 async with httpx.AsyncClient(timeout=timeout) as client:
-                    response = await client.post(f"{self._base_url}/{self._api_key}", json=payload)
+                    response = await client.post(
+                        f"{self._base_url}/{self._api_key}", json=payload, headers=outbound_headers()
+                    )
             response.raise_for_status()
             body = response.json()
             jobs = [self._normalize(job) for job in body.get("jobs", [])]
