@@ -17,6 +17,7 @@ class Settings:
     gateway_user_id_header: str
     internal_api_key: str
     database_schema: str
+    redis_url: str | None
 
 
 @lru_cache
@@ -43,4 +44,5 @@ def get_settings() -> Settings:
         gateway_user_id_header=values["GATEWAY_USER_ID_HEADER"].strip(),
         internal_api_key=values["INTERNAL_API_KEY"].strip(),
         database_schema=database_schema,
+        redis_url=os.getenv("REDIS_URL") or None,
     )

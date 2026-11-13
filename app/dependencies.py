@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from functools import lru_cache
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,15 +7,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.internal.command_services.default_job_search_command_service import DefaultJobSearchCommandService
 from app.application.internal.query_service.default_job_search_query_service import DefaultJobSearchQueryService
 from app.infrastructure.configuration.settings import get_settings
+from app.infrastructure.cache.redis_json_cache import RedisJsonCache
 from app.infrastructure.persistence.sqlalchemy.database import get_session
 from app.infrastructure.persistence.sqlalchemy.repositories.sqlalchemy_favorite_job_repository import SQLAlchemyFavoriteJobRepository
 from app.infrastructure.persistence.sqlalchemy.repositories.sqlalchemy_job_offer_repository import SQLAlchemyJobOfferRepository
 from app.infrastructure.providers.jooble_peru_provider import JooblePeruProvider
+from app.infrastructure.providers.circuit_breaker import CircuitBreaker
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     async for session in get_session():
         yield session
+
+
+@lru_cache
+def get_redis_cache() -> RedisJsonCache:
+    return RedisJsonCache(get_settings().redis_url)
+
+
+@lru_cache
+def get_jooble_circuit_breaker() -> CircuitBreaker:
+    return CircuitBreaker()
 
 
 def get_current_user_id(request: Request) -> int:
@@ -33,7 +46,11 @@ def get_current_user_id(request: Request) -> int:
 
 def get_job_provider() -> JooblePeruProvider:
     settings = get_settings()
-    return JooblePeruProvider(settings.jooble_api_key, settings.jooble_base_url)
+    return JooblePeruProvider(
+        settings.jooble_api_key,
+        settings.jooble_base_url,
+        breaker=get_jooble_circuit_breaker(),
+    )
 
 
 def get_job_search_command_service(session: AsyncSession) -> DefaultJobSearchCommandService:

@@ -4,6 +4,7 @@ from secrets import compare_digest
 from fastapi import FastAPI, Request
 
 from app.infrastructure.configuration.settings import get_settings
+from app.dependencies import get_redis_cache
 from app.observability import install_observability, problem_response
 from app.interfaces.rest.controller.internal_controller import router as internal_router
 from app.interfaces.rest.controller.job_search_controller import router as jobs_router
@@ -13,7 +14,10 @@ from app.interfaces.rest.controller.job_search_controller import router as jobs_
 async def lifespan(_: FastAPI):
     # Validate settings early. Schema changes are intentionally handled by Alembic.
     get_settings()
-    yield
+    try:
+        yield
+    finally:
+        await get_redis_cache().close()
 
 
 app = FastAPI(
